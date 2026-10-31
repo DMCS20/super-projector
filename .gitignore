@@ -1,0 +1,12 @@
+# --- NUNCA subir al repo (es público) ---
+# Diagnósticos completos: contienen número de serie, MAC, android_id, ajustes, IPs.
+privado/
+# Respaldos de particiones (calibración, MAC, claves) y firmware de fábrica.
+respaldos/
+firmware/
+*.img
+*.img.gz
+*.img.xz
+
+# macOS
+.DS_Store
