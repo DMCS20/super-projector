@@ -106,6 +106,40 @@ final class Ui {
         return tile;
     }
 
+    /** Fila de lista: al enfocarse se vuelve una barra clara que crece un poco. */
+    static android.widget.LinearLayout listRow(Context context, int icon, String label,
+            View.OnClickListener action, View.OnFocusChangeListener extra) {
+        android.widget.LinearLayout row = new android.widget.LinearLayout(context);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setFocusable(true);
+        row.setClickable(true);
+        row.setPadding(px(context, 22), 0, px(context, 22), 0);
+        ImageView image = new ImageView(context);
+        image.setImageResource(icon);
+        int size = px(context, 28);
+        row.addView(image, new android.widget.LinearLayout.LayoutParams(size, size));
+        TextView name = text(context, label, 24, TEXT, true);
+        android.widget.LinearLayout.LayoutParams nameParams = new android.widget.LinearLayout.LayoutParams(-2, -2);
+        nameParams.leftMargin = px(context, 18);
+        row.addView(name, nameParams);
+        GradientDrawable pill = new GradientDrawable();
+        pill.setCornerRadius(px(context, 12));
+        pill.setColor(TEXT);
+        pill.setAlpha(0);
+        row.setBackground(pill);
+        row.setOnClickListener(action);
+        row.setOnFocusChangeListener((view, focused) -> {
+            pill.setAlpha(focused ? 255 : 0);
+            name.setTextColor(focused ? GROUND : TEXT);
+            image.setColorFilter(focused ? GROUND : TEXT);
+            view.animate().scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
+                    .translationZ(focused ? px(context, 16) : 0)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(2.2f)).setDuration(220).start();
+            if (extra != null) extra.onFocusChange(view, focused);
+        });
+        return row;
+    }
+
     /** Reduce la imagen a unos pocos píxeles: al ampliarla queda difuminada casi sin gastar memoria. */
     static Bitmap tiny(Drawable art, int width, int height) {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);

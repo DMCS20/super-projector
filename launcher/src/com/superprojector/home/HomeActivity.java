@@ -18,24 +18,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HomeActivity extends Activity {
-    private static final String[] FEATURED = {
-        "com.netflix.mediaclient",
-        "com.google.android.youtube.tv",
-        "com.disney.disneyplus",
-        "com.cbs.ca",
-    };
-
     private Shelf shelf;
     private LinearLayout apps;
     private TextView title;
     private TextView detail;
     private TextView date;
     private ImageView network;
+    private TextView weather;
     private String shown;
     private ConnectivityManager connectivity;
     private final ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
         @Override public void onAvailable(Network n) { runOnUiThread(HomeActivity.this::showNetwork); }
         @Override public void onLost(Network n) { runOnUiThread(HomeActivity.this::showNetwork); }
+    };
+
+    private final android.content.BroadcastReceiver usb = new android.content.BroadcastReceiver() {
+        @Override public void onReceive(android.content.Context context, Intent intent) {
+            android.widget.Toast.makeText(context, "USB conectado", android.widget.Toast.LENGTH_SHORT).show();
+            Page.open(HomeActivity.this, InputActivity.class);
+        }
     };
 
     @Override
@@ -72,6 +73,9 @@ public class HomeActivity extends Activity {
 
         connectivity = getSystemService(ConnectivityManager.class);
         connectivity.registerDefaultNetworkCallback(callback);
+        android.content.IntentFilter usbFilter = new android.content.IntentFilter(Intent.ACTION_MEDIA_MOUNTED);
+        usbFilter.addDataScheme("file");
+        registerReceiver(usb, usbFilter);
     }
 
     @Override
@@ -79,6 +83,8 @@ public class HomeActivity extends Activity {
         super.onResume();
         fillApps();
         showNetwork();
+        Weather.load(this, text -> runOnUiThread(() -> weather.setText(text)));
+        claimScreensaver();
         date.setText(new java.text.SimpleDateFormat("EEE d MMM", new java.util.Locale("es")).format(new java.util.Date()));
     }
 
@@ -91,13 +97,33 @@ public class HomeActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(usb);
         connectivity.unregisterNetworkCallback(callback);
         super.onDestroy();
     }
 
     @Override
+    public boolean onKeyUp(int keyCode, android.view.KeyEvent event) {
+        if (keyCode == android.view.KeyEvent.KEYCODE_MENU) {
+            startActivity(new Intent(this, QuickPanelActivity.class));
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
     public void onBackPressed() {
         // El inicio es la raíz: Atrás no debe salir de aquí.
+    }
+
+    /** El arranque de fábrica reescribe este ajuste: se recupera al volver al inicio. */
+    private void claimScreensaver() {
+        try {
+            android.provider.Settings.Secure.putString(getContentResolver(), "screensaver_components",
+                    getPackageName() + "/.ClockDream");
+        } catch (SecurityException e) {
+            android.util.Log.i("SuperProjector", "sin permiso para el salvapantallas");
+        }
     }
 
     private LinearLayout row() {
@@ -110,6 +136,10 @@ public class HomeActivity extends Activity {
     private View header() {
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        weather = Ui.text(this, "", 22, Ui.MUTED, false);
+        LinearLayout.LayoutParams weatherParams = new LinearLayout.LayoutParams(-2, -2);
+        weatherParams.rightMargin = Ui.px(this, 18);
+        header.addView(weather, weatherParams);
         network = new ImageView(this);
         int size = Ui.px(this, 24);
         header.addView(network, new LinearLayout.LayoutParams(size, size));
@@ -144,7 +174,7 @@ public class HomeActivity extends Activity {
     private void fillApps() {
         StringBuilder signature = new StringBuilder();
         List<Launch.App> found = new ArrayList<>();
-        for (String pkg : FEATURED) {
+        for (String pkg : Favorites.load(this)) {
             Launch.App app = Launch.featured(this, pkg);
             if (app != null) {
                 found.add(app);
@@ -157,7 +187,10 @@ public class HomeActivity extends Activity {
         apps.removeAllViews();
         List<View> tiles = new ArrayList<>();
         for (Launch.App app : found) {
-            tiles.add(Ui.appTile(this, app, this::onTileFocus, v -> Launch.start(this, app.intent)));
+            tiles.add(Ui.appTile(this, app, this::onTileFocus, v -> {
+                Favorites.opened(this, app.intent.getComponent().getPackageName());
+                Launch.start(this, app.intent);
+            }));
         }
         tiles.add(Ui.iconTile(this, R.drawable.ic_apps, "Todas", "Todas tus aplicaciones", 0xFF4A4F57, 0xFF2A2D33,
                 this::onTileFocus, v -> Page.open(this, AppsActivity.class)));
@@ -173,8 +206,8 @@ public class HomeActivity extends Activity {
                 this::onTileFocus, v -> Page.open(this, FocusActivity.class)));
         addCell(row, Ui.iconTile(this, R.drawable.ic_keystone, "Keystone", "Corrige la forma de la imagen", 0xFFE5762E, 0xFFA34A14,
                 this::onTileFocus, v -> Page.open(this, KeystoneActivity.class)));
-        addCell(row, Ui.iconTile(this, R.drawable.ic_wifi, "Wi-Fi", "Redes e internet", 0xFF0091FF, 0xFF0A5FB0,
-                this::onTileFocus, v -> Launch.start(this, new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))));
+        addCell(row, Ui.iconTile(this, R.drawable.ic_cast, "Compartir", "Desde iPhone o Android", 0xFF0091FF, 0xFF0A5FB0,
+                this::onTileFocus, v -> Page.open(this, ShareActivity.class)));
         addCell(row, Ui.iconTile(this, R.drawable.ic_settings, "Ajustes", "Sistema y proyector", 0xFF6B7078, 0xFF3C4046,
                 this::onTileFocus, v -> Page.open(this, SettingsActivity.class)));
         return row;

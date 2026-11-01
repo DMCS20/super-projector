@@ -21,6 +21,7 @@ public class AppsActivity extends Page {
         list.setClipToPadding(false);
         list.setPadding(Ui.px(this, 64), Ui.px(this, 40), Ui.px(this, 64), Ui.px(this, 48));
         list.addView(Ui.text(this, "Todas las apps", 44, Ui.TEXT, true));
+        list.addView(Ui.text(this, "Mantén OK para añadir o quitar de Inicio", 22, Ui.MUTED, false));
 
         List<Launch.App> apps = Launch.allApps(this);
         View first = null;
@@ -36,7 +37,16 @@ public class AppsActivity extends Page {
                 if (i + c < apps.size()) {
                     Launch.App app = apps.get(i + c);
                     View tile = Ui.appTile(this, app, (art, name, info) -> shelf.show(art),
-                            v -> Launch.start(this, app.intent));
+                            v -> {
+                                Favorites.opened(this, app.intent.getComponent().getPackageName());
+                                Launch.start(this, app.intent);
+                            });
+                    tile.setOnLongClickListener(v -> {
+                        boolean added = Favorites.toggle(this, app.intent.getComponent().getPackageName());
+                        android.widget.Toast.makeText(this, app.label + (added ? " añadida a Inicio" : " quitada de Inicio"),
+                                android.widget.Toast.LENGTH_SHORT).show();
+                        return true;
+                    });
                     if (first == null) first = tile;
                     row.addView(tile, cell);
                 } else {

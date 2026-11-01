@@ -1,12 +1,10 @@
 package com.superprojector.home;
 
 import android.content.Intent;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
-import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -51,10 +49,14 @@ public class SettingsActivity extends Page {
         list.addView(spacer, new LinearLayout.LayoutParams(1, Ui.px(this, 20)));
 
         Intent projector = Launch.action("com.jixin.settings5", "jixin.intent.action.SETTINGS");
+        row(R.drawable.ic_settings, "Panel rápido", "Volumen, brillo y temperatura", 0xFF3C4046,
+                new Intent(this, QuickPanelActivity.class));
         row(R.drawable.ic_wifi, "Wi-Fi", "Conéctate a una red", 0xFF0A5FB0, new Intent(Settings.ACTION_WIFI_SETTINGS));
         row(R.drawable.ic_bluetooth, "Bluetooth", "Mandos, audífonos y parlantes", 0xFF3A3A9E, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
         row(R.drawable.ic_input, "Entrada", "HDMI y USB", 0xFF3A3A9E, null);
         row(R.drawable.ic_focus, "Proyector", "Enfoque, keystone e imagen", 0xFF0B6B60, projector);
+        Intent speaker = Launch.forPackage(this, "com.jixin.btspeaker");
+        row(R.drawable.ic_sound, "Altavoz Bluetooth", "Usa el proyector como parlante del teléfono", 0xFF3A3A9E, speaker);
         row(R.drawable.ic_sound, "Sonido", "Volumen y salida de audio", 0xFFA34A14, new Intent(Settings.ACTION_SOUND_SETTINGS));
         row(R.drawable.ic_language, "Idioma", "Idioma del sistema", 0xFF0B6B60, new Intent(Settings.ACTION_LOCALE_SETTINGS));
         row(R.drawable.ic_clock, "Fecha y hora", "Zona horaria y formato", 0xFF3C4046, new Intent(Settings.ACTION_DATE_SETTINGS));
@@ -73,36 +75,10 @@ public class SettingsActivity extends Page {
     }
 
     private void row(int icon, String label, String info, int color, Intent target) {
-        LinearLayout row = new LinearLayout(this);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setFocusable(true);
-        row.setClickable(true);
-        row.setPadding(Ui.px(this, 22), 0, Ui.px(this, 22), 0);
-        ImageView image = new ImageView(this);
-        image.setImageResource(icon);
-        int size = Ui.px(this, 28);
-        row.addView(image, new LinearLayout.LayoutParams(size, size));
-        TextView name = Ui.text(this, label, 24, Ui.TEXT, true);
-        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(-2, -2);
-        nameParams.leftMargin = Ui.px(this, 18);
-        row.addView(name, nameParams);
-
-        GradientDrawable pill = new GradientDrawable();
-        pill.setCornerRadius(Ui.px(this, 12));
-        pill.setColor(Ui.TEXT);
-        pill.setAlpha(0);
-        row.setBackground(pill);
-        row.setOnClickListener(v -> {
+        LinearLayout row = Ui.listRow(this, icon, label, v -> {
             if (target == null) Page.open(this, InputActivity.class);
             else Launch.start(this, target);
-        });
-        row.setOnFocusChangeListener((view, focused) -> {
-            pill.setAlpha(focused ? 255 : 0);
-            name.setTextColor(focused ? Ui.GROUND : Ui.TEXT);
-            image.setColorFilter(focused ? Ui.GROUND : Ui.TEXT);
-            view.animate().scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
-                    .translationZ(focused ? Ui.px(this, 16) : 0)
-                    .setInterpolator(new OvershootInterpolator(2.2f)).setDuration(220).start();
+        }, (view, focused) -> {
             if (focused) {
                 hero.setImageResource(icon);
                 hero.setAlpha(0f);
