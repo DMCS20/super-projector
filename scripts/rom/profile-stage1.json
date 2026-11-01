@@ -1,0 +1,38 @@
+{
+  "description": "Primera ROM: quita OTA, analítica, tienda y apps sobrantes. Conserva launcher, ajustes y asistente de fábrica hasta tener los propios.",
+  "images": {
+    "system": {
+      "remove": [
+        "/system/app/ota2",
+        "/system/app/analyticsService",
+        "/system/app/jappstore2",
+        "/system/app/music",
+        "/system/app/wps"
+      ],
+      "patch": {
+        "/system/bin/jx_init.sh": [
+          {
+            "why": "El fabricante ejecuta como root cualquier /data/bootup.sh al arrancar",
+            "old": "if [ -f /data/bootup.sh ]; then\n   /data/bootup.sh\nfi\n\n",
+            "new": ""
+          }
+        ],
+        "/system/etc/app_dispatcher.json": [
+          {
+            "why": "Tecla que abría el OTA ya eliminado",
+            "old": "    {\n      \"keycode\": 186,\n      \"type\": \"activity\",\n      \"keycodeAction\": 1,\n      \"ext\": {\n        \"pkgName\": \"com.jixin.ota\",\n        \"action\": \"jixin.intent.action.OTA_SELECTER\"\n      },\n      \"notAllowExec\": {\n        \"foregroundPkgName\": \"com.jixin.guide\"\n      }\n    },\n",
+            "new": ""
+          }
+        ]
+      }
+    },
+    "product": {
+      "remove": [
+        "/app/ExoPlayer",
+        "/priv-app/product_priv-app_TVRecommendations"
+      ]
+    },
+    "system_ext": {},
+    "vendor": {}
+  }
+}

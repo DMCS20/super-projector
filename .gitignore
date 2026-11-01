@@ -10,3 +10,8 @@ firmware/
 
 # macOS
 .DS_Store
+
+# Imágenes extraídas y APKs de fábrica
+work/
+build/
+*.apk

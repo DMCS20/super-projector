@@ -24,6 +24,19 @@ Una GSI queda solo como opción al final.
 - [ ] 8. Launcher propio
 - [ ] 9. Opcional: GSI
 
+## Construcción de la ROM
+
+Solo hace falta `brew install e2fsprogs`. Ningún script de `scripts/rom/` toca el proyector.
+
+```bash
+python3 scripts/rom/extract_firmware.py <respaldo> ../work/stock
+python3 scripts/rom/build_rom.py scripts/rom/profile-stage1.json ../work/stock ../work/out/stage1
+```
+
+`profile-stage1.json` define qué se quita. Cada imagen se relee y se compara con la de fábrica,
+incluidos permisos y SELinux, y el resultado es idéntico byte a byte en cada compilación.
+Las imágenes aún **no se han probado en el proyector**.
+
 ## Paso 1 — Diagnóstico
 
 Requisitos en el Mac:
