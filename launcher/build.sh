@@ -7,8 +7,10 @@ JAR="$SDK/platforms/android-35/android.jar"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/build"
 rm -rf "$OUT"; mkdir -p "$OUT/classes" "$OUT/dex"
-"$BT/aapt2" link -o "$OUT/base.apk" -I "$JAR" --manifest "$HERE/AndroidManifest.xml"
-javac --release 11 -nowarn -classpath "$JAR" -d "$OUT/classes" $(find "$HERE/src" -name "*.java")
+mkdir -p "$OUT/gen"
+"$BT/aapt2" compile --dir "$HERE/res" -o "$OUT/res.zip"
+"$BT/aapt2" link -o "$OUT/base.apk" -I "$JAR" --manifest "$HERE/AndroidManifest.xml" --java "$OUT/gen" "$OUT/res.zip"
+javac --release 11 -nowarn -classpath "$JAR" -d "$OUT/classes" $(find "$HERE/src" "$OUT/gen" -name "*.java")
 "$BT/d8" --release --min-api 33 --lib "$JAR" --output "$OUT/dex" $(find "$OUT/classes" -name '*.class')
 cp "$OUT/base.apk" "$OUT/unsigned.apk"
 (cd "$OUT/dex" && zip -q -0 "$OUT/unsigned.apk" classes.dex)

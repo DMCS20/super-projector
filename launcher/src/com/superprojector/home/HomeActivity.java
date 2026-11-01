@@ -8,6 +8,8 @@ import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
@@ -17,16 +19,20 @@ import java.util.List;
 
 public class HomeActivity extends Activity {
     private static final String SETTINGS = "com.jixin.settings5";
-    private static final String[][] FEATURED = {
-        {"Netflix", "com.netflix.mediaclient"},
-        {"YouTube", "com.google.android.youtube.tv"},
-        {"Disney+", "com.disney.disneyplus"},
-        {"Paramount+", "com.cbs.ca"},
+    private static final String[] FEATURED = {
+        "com.netflix.mediaclient",
+        "com.google.android.youtube.tv",
+        "com.disney.disneyplus",
+        "com.cbs.ca",
     };
 
+    private Shelf shelf;
     private LinearLayout apps;
-    private TextView network;
+    private TextView title;
+    private TextView detail;
     private TextView date;
+    private ImageView network;
+    private String shown;
     private ConnectivityManager connectivity;
     private final ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
         @Override public void onAvailable(Network n) { runOnUiThread(HomeActivity.this::showNetwork); }
@@ -36,18 +42,34 @@ public class HomeActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Ui.GROUND);
-        root.setPadding(Ui.px(this, 64), Ui.px(this, 44), Ui.px(this, 64), Ui.px(this, 48));
+        shelf = new Shelf(this);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setClipChildren(false);
+        content.setClipToPadding(false);
+        content.setPadding(Ui.px(this, 64), Ui.px(this, 36), Ui.px(this, 64), Ui.px(this, 40));
 
-        root.addView(header());
-        root.addView(title("Apps", 38));
-        apps = new LinearLayout(this);
-        root.addView(apps, new LinearLayout.LayoutParams(-1, Ui.px(this, 156)));
-        root.addView(title("Proyector", 34));
-        root.addView(projectorRow(), new LinearLayout.LayoutParams(-1, Ui.px(this, 112)));
-        setContentView(root);
+        content.addView(header());
+        View spacer = new View(this);
+        content.addView(spacer, new LinearLayout.LayoutParams(1, 0, 1f));
+        title = Ui.text(this, "", 56, Ui.TEXT, true);
+        title.setIncludeFontPadding(false);
+        content.addView(title);
+        detail = Ui.text(this, "", 22, Ui.MUTED, false);
+        LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(-1, Ui.px(this, 32));
+        detailParams.topMargin = Ui.px(this, 8);
+        detailParams.bottomMargin = Ui.px(this, 18);
+        content.addView(detail, detailParams);
+
+        apps = row();
+        content.addView(apps, new LinearLayout.LayoutParams(-1, Ui.px(this, 124)));
+        LinearLayout controls = projectorRow();
+        LinearLayout.LayoutParams controlsParams = new LinearLayout.LayoutParams(-1, Ui.px(this, 124));
+        controlsParams.topMargin = Ui.px(this, 26);
+        content.addView(controls, controlsParams);
+
+        shelf.addView(content, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(shelf);
 
         connectivity = getSystemService(ConnectivityManager.class);
         connectivity.registerDefaultNetworkCallback(callback);
@@ -58,7 +80,7 @@ public class HomeActivity extends Activity {
         super.onResume();
         fillApps();
         showNetwork();
-        date.setText(new java.text.SimpleDateFormat("EEEE d 'de' MMMM", new java.util.Locale("es")).format(new java.util.Date()));
+        date.setText(new java.text.SimpleDateFormat("EEE d MMM", new java.util.Locale("es")).format(new java.util.Date()));
     }
 
     @Override
@@ -79,92 +101,95 @@ public class HomeActivity extends Activity {
         // El inicio es la raíz: Atrás no debe salir de aquí.
     }
 
+    private LinearLayout row() {
+        LinearLayout row = new LinearLayout(this);
+        row.setClipChildren(false);
+        row.setClipToPadding(false);
+        return row;
+    }
+
     private View header() {
         LinearLayout header = new LinearLayout(this);
-        header.setGravity(Gravity.BOTTOM);
-
+        header.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        network = new ImageView(this);
+        int size = Ui.px(this, 24);
+        header.addView(network, new LinearLayout.LayoutParams(size, size));
+        date = Ui.text(this, "", 22, Ui.MUTED, false);
+        LinearLayout.LayoutParams dateParams = new LinearLayout.LayoutParams(-2, -2);
+        dateParams.leftMargin = Ui.px(this, 18);
+        header.addView(date, dateParams);
         TextClock clock = new TextClock(this);
         clock.setFormat24Hour("HH:mm");
         clock.setFormat12Hour("HH:mm");
         clock.setTextColor(Ui.TEXT);
-        clock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.px(this, 88));
+        clock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.px(this, 26));
         clock.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
-        clock.setIncludeFontPadding(false);
-        clock.setLetterSpacing(-0.03f);
-        header.addView(clock);
-
-        date = new TextView(this);
-        date.setTextColor(Ui.MUTED);
-        date.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.px(this, 22));
-        LinearLayout.LayoutParams dateParams = new LinearLayout.LayoutParams(0, -2, 1f);
-        dateParams.leftMargin = Ui.px(this, 24);
-        dateParams.bottomMargin = Ui.px(this, 10);
-        header.addView(date, dateParams);
-
-        network = Ui.text(this, "", 20, Ui.MUTED, false);
-        LinearLayout.LayoutParams networkParams = new LinearLayout.LayoutParams(-2, -2);
-        networkParams.bottomMargin = Ui.px(this, 10);
-        header.addView(network, networkParams);
+        LinearLayout.LayoutParams clockParams = new LinearLayout.LayoutParams(-2, -2);
+        clockParams.leftMargin = Ui.px(this, 14);
+        header.addView(clock, clockParams);
         return header;
     }
 
-    private TextView title(String value, int top) {
-        TextView view = Ui.text(this, value, 20, Ui.MUTED, true);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
-        params.topMargin = Ui.px(this, top);
-        params.bottomMargin = Ui.px(this, 14);
-        view.setLayoutParams(params);
-        return view;
+    private void addCell(LinearLayout row, View tile) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1f);
+        if (row.getChildCount() > 0) params.leftMargin = Ui.px(this, 24);
+        row.addView(tile, params);
     }
 
-    private void addCell(LinearLayout row, View card, boolean first) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1f);
-        if (!first) params.leftMargin = Ui.px(this, 16);
-        row.addView(card, params);
+    private void onTileFocus(android.graphics.drawable.Drawable art, String name, String info) {
+        title.setText(name);
+        detail.setText(info);
+        shelf.show(art);
     }
 
     private void fillApps() {
-        View focused = getCurrentFocus();
-        boolean hadFocusInApps = focused != null && focused.getParent() == apps;
-        apps.removeAllViews();
-        List<View> cards = new ArrayList<>();
-        for (String[] app : FEATURED) {
-            Intent open = Launch.forPackage(this, app[1]);
-            if (open != null) {
-                cards.add(Ui.card(this, null, app[0], false, v -> Launch.start(this, open)));
+        StringBuilder signature = new StringBuilder();
+        List<Launch.App> found = new ArrayList<>();
+        for (String pkg : FEATURED) {
+            Launch.App app = Launch.featured(this, pkg);
+            if (app != null) {
+                found.add(app);
+                signature.append(pkg).append(',');
             }
         }
-        cards.add(Ui.card(this, null, "Todas", false,
-                v -> startActivity(new Intent(this, AppsActivity.class))));
-        for (int i = 0; i < cards.size(); i++) addCell(apps, cards.get(i), i == 0);
-        if (focused == null || hadFocusInApps) cards.get(0).requestFocus();
+        // Reconstruir la fila mueve el foco, así que solo se hace si cambiaron las apps.
+        if (signature.toString().equals(shown)) return;
+        shown = signature.toString();
+        apps.removeAllViews();
+        List<View> tiles = new ArrayList<>();
+        for (Launch.App app : found) {
+            tiles.add(Ui.appTile(this, app, this::onTileFocus, v -> Launch.start(this, app.intent)));
+        }
+        tiles.add(Ui.iconTile(this, R.drawable.ic_apps, "Todas", "Todas tus aplicaciones", 0xFF4A4F57, 0xFF2A2D33,
+                this::onTileFocus, v -> Page.open(this, AppsActivity.class)));
+        for (View tile : tiles) addCell(apps, tile);
+        tiles.get(0).requestFocus();
     }
 
-    private View projectorRow() {
-        LinearLayout row = new LinearLayout(this);
-        Intent input = Launch.action(SETTINGS, "jixin.intent.action.INPUT_SOURCE_SELECT");
+    private LinearLayout projectorRow() {
+        LinearLayout row = row();
         Intent settings = Launch.action(SETTINGS, "jixin.intent.action.SETTINGS");
-        addCell(row, Ui.card(this, "Entrada", "Elegir", true, v -> Launch.start(this, input)), true);
-        addCell(row, Ui.card(this, "Imagen", "Enfoque", true, v -> Launch.start(this, settings)), false);
-        addCell(row, Ui.card(this, "Imagen", "Keystone", true, v -> {
-            Intent keystone = Launch.forPackage(this, "com.droidlogic.keystone");
-            Launch.start(this, keystone != null ? keystone : settings);
-        }), false);
-        addCell(row, Ui.card(this, "Sistema", "Wi-Fi", true,
-                v -> Launch.start(this, new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))), false);
-        addCell(row, Ui.card(this, "Sistema", "Ajustes", true, v -> Launch.start(this, settings)), false);
+        addCell(row, Ui.iconTile(this, R.drawable.ic_input, "Entrada", "HDMI y otras fuentes", 0xFF5B5BD6, 0xFF3A3A9E,
+                this::onTileFocus, v -> Page.open(this, InputActivity.class)));
+        addCell(row, Ui.iconTile(this, R.drawable.ic_focus, "Enfoque", "Nitidez de la imagen", 0xFF12A594, 0xFF0B6B60,
+                this::onTileFocus, v -> Launch.start(this, settings)));
+        addCell(row, Ui.iconTile(this, R.drawable.ic_keystone, "Keystone", "Corrige la forma de la imagen", 0xFFE5762E, 0xFFA34A14,
+                this::onTileFocus, v -> {
+                    Intent keystone = Launch.forPackage(this, "com.droidlogic.keystone");
+                    Launch.start(this, keystone != null ? keystone : settings);
+                }));
+        addCell(row, Ui.iconTile(this, R.drawable.ic_wifi, "Wi-Fi", "Redes e internet", 0xFF0091FF, 0xFF0A5FB0,
+                this::onTileFocus, v -> Launch.start(this, new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))));
+        addCell(row, Ui.iconTile(this, R.drawable.ic_settings, "Ajustes", "Sistema y proyector", 0xFF6B7078, 0xFF3C4046,
+                this::onTileFocus, v -> Page.open(this, SettingsActivity.class)));
         return row;
     }
 
     private void showNetwork() {
         NetworkCapabilities caps = connectivity.getNetworkCapabilities(connectivity.getActiveNetwork());
         boolean online = caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
-        network.setText(online ? "Wi-Fi conectado" : "Sin Wi-Fi");
-        android.graphics.drawable.GradientDrawable dot = new android.graphics.drawable.GradientDrawable();
-        dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        dot.setColor(online ? Ui.ACCENT : Ui.LINE);
-        dot.setSize(Ui.px(this, 10), Ui.px(this, 10));
-        network.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, null, null);
-        network.setCompoundDrawablePadding(Ui.px(this, 12));
+        network.setImageResource(R.drawable.ic_wifi);
+        network.setAlpha(online ? 1f : 0.3f);
+        network.setContentDescription(online ? "Wi-Fi conectado" : "Sin Wi-Fi");
     }
 }
