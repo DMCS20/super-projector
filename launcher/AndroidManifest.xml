@@ -17,6 +17,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".AppsActivity" android:exported="false"/>
+        <activity android:name=".FocusActivity" android:exported="true"/>
+        <activity android:name=".KeystoneActivity" android:exported="true"/>
         <activity android:name=".InputActivity" android:exported="true"/>
         <activity android:name=".SettingsActivity" android:exported="true"/>
         <activity android:name=".WatchActivity" android:exported="false"

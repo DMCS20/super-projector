@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HomeActivity extends Activity {
-    private static final String SETTINGS = "com.jixin.settings5";
     private static final String[] FEATURED = {
         "com.netflix.mediaclient",
         "com.google.android.youtube.tv",
@@ -168,16 +167,12 @@ public class HomeActivity extends Activity {
 
     private LinearLayout projectorRow() {
         LinearLayout row = row();
-        Intent settings = Launch.action(SETTINGS, "jixin.intent.action.SETTINGS");
         addCell(row, Ui.iconTile(this, R.drawable.ic_input, "Entrada", "HDMI y otras fuentes", 0xFF5B5BD6, 0xFF3A3A9E,
                 this::onTileFocus, v -> Page.open(this, InputActivity.class)));
         addCell(row, Ui.iconTile(this, R.drawable.ic_focus, "Enfoque", "Nitidez de la imagen", 0xFF12A594, 0xFF0B6B60,
-                this::onTileFocus, v -> Launch.start(this, settings)));
+                this::onTileFocus, v -> Page.open(this, FocusActivity.class)));
         addCell(row, Ui.iconTile(this, R.drawable.ic_keystone, "Keystone", "Corrige la forma de la imagen", 0xFFE5762E, 0xFFA34A14,
-                this::onTileFocus, v -> {
-                    Intent keystone = Launch.forPackage(this, "com.droidlogic.keystone");
-                    Launch.start(this, keystone != null ? keystone : settings);
-                }));
+                this::onTileFocus, v -> Page.open(this, KeystoneActivity.class)));
         addCell(row, Ui.iconTile(this, R.drawable.ic_wifi, "Wi-Fi", "Redes e internet", 0xFF0091FF, 0xFF0A5FB0,
                 this::onTileFocus, v -> Launch.start(this, new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))));
         addCell(row, Ui.iconTile(this, R.drawable.ic_settings, "Ajustes", "Sistema y proyector", 0xFF6B7078, 0xFF3C4046,
